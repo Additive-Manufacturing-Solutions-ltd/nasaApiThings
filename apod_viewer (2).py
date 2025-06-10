@@ -174,8 +174,23 @@ class GalleryFrame(ttk.Frame):
             f"&start_date={start_date.isoformat()}"
             f"&end_date={end_date.isoformat()}"
         )
-        res = requests.get(url)
-        data = res.json()
+        try:
+            res = requests.get(url, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to fetch gallery data: {e}")
+            return
+
+        if isinstance(data, dict):
+            if "url" in data:
+                data = [data]
+            else:
+                messagebox.showerror(
+                    "Error", data.get("msg", data.get("error", "Unknown error"))
+                )
+                return
+
         images = [
             (item["url"], item.get("title", ""))
             for item in data
