@@ -1,0 +1,351 @@
+### 1. APOD: Astronomy Picture of the Day
+
+**What it is:**
+Every day since 1995 NASA publishes an astronomy-themed image or video, accompanied by a brief explanation written by professional astronomers.
+**Endpoint:**
+
+```http
+GET https://api.nasa.gov/planetary/apod
+```
+
+**Key parameters:**
+
+* `api_key` (required)
+* `date` (YYYY-MM-DD) or `start_date` + `end_date`
+* `count` (random images)
+* `concept_tags`, `thumbs` (booleans)
+
+**How it works:**
+A simple HTTP GET returns a JSON object (or array) containing the URL, title, explanation, media type, plus optional HD/thumbnail URLs.
+([github.com][1])
+
+---
+
+### 2. Asteroids NeoWs: Near Earth Object Web Service
+
+**What it is:**
+A RESTful service providing data on asteroids and comets that approach Earth.
+**Primary endpoints:**
+
+* Browse all NEOs:
+
+  ```http
+  GET https://api.nasa.gov/neo/rest/v1/neo/browse
+  ```
+* Feed (by date range):
+
+  ```http
+  GET https://api.nasa.gov/neo/rest/v1/feed
+  ```
+* Lookup by `{asteroid_id}` and `/stats` for overall counts.
+  **Key parameters:**
+* `api_key`
+* `start_date`, `end_date` (YYYY-MM-DD)
+* `page` (for browse)
+  **How it works:**
+  You make GET requests to the above paths, passing your API key and any filters; the service returns paginated JSON with details (diameter, hazard rating, close-approach data).
+  ([api.nasa.gov][2])
+
+---
+
+### 3. DONKI: Space Weather Database Of Notifications, Knowledge, Information
+
+**What it is:**
+Daily interpretations of space-weather observations (CMEs, flares, radiation belt enhancements, etc.) curated by NOAA and NASA.
+**Sample endpoint:**
+
+```http
+GET https://api.nasa.gov/DONKI/CME?startDate=2025-01-01&endDate=2025-01-07
+```
+
+**Key parameters:**
+
+* `api_key`
+* `startDate`, `endDate` (YYYY-MM-DD)
+* `type` of event (e.g. CME, FLR, IPS) via different paths under `/DONKI/`
+  **How it works:**
+  Each subpath (e.g. `/DONKI/CME`, `/DONKI/FLR`) returns JSON arrays of event objects; you filter by date and other optional criteria.
+  ([api.nasa.gov][2])
+
+---
+
+### 4. Earth: Satellite Imagery
+
+**What it is:**
+Quickstart API for Landsat 8 satellite imagery (via a simple Flask microservice).
+**Primary endpoints:**
+
+* `GET /planetary/earth/imagery?lat={lat}&lon={lon}&date={YYYY-MM-DD}&dim={deg}`
+* `GET /planetary/earth/assets?lat={lat}&lon={lon}`
+  **Key parameters:**
+* `api_key`
+* `lat`, `lon` (decimal degrees)
+* `date` (optional; defaults to latest)
+* `dim` (image width in degrees; default \~0.025)
+  **How it works:**
+  Supply coordinates & date; you get back either a JSON with URL to a JPG or a list of available asset dates.
+  ([github.com][3])
+
+---
+
+### 5. EONET: Earth Observatory Natural Event Tracker
+
+**What it is:**
+Metadata on natural events (wildfires, storms, volcanoes) from NASA’s Earth Observatory.
+**Primary endpoints (v3):**
+
+* `GET https://eonet.gsfc.nasa.gov/api/v3/events`
+* `GET …/categories`, `…/sources`, `…/layers`
+  **Key parameters:**
+* `source`, `category` (comma-sep IDs)
+* `status` (`open`/`closed`/`all`)
+* `limit`, `days` (time span)
+  **How it works:**
+  Perform GETs with filters; returns GeoJSON-style JSON with event geometries and source links.
+  ([eonet.gsfc.nasa.gov][4])
+
+---
+
+### 6. EPIC: Earth Polychromatic Imaging Camera
+
+**What it is:**
+Full-disc “Blue Marble” images of Earth from DSCOVR at the Sun–Earth Lagrange point.
+**Primary endpoints:**
+
+* `GET https://api.nasa.gov/EPIC/api/natural`
+* `GET https://api.nasa.gov/EPIC/api/natural/date/{YYYY-MM-DD}`
+* analogous `/enhanced` paths for enhanced-color imagery
+  **Key parameters:**
+* `api_key`
+* dates in the path (`natural/date/YYYY-MM-DD`)
+  **How it works:**
+  Path-based GET returns JSON with image metadata; image files are hosted separately (URLs in response).
+  ([epic.gsfc.nasa.gov][5])
+
+---
+
+### 7. Exoplanet Archive
+
+**What it is:**
+Programmatic access to NASA’s Exoplanet Archive (data on confirmed exoplanets, Kepler candidates, light curves).
+**Base URL:**
+
+```
+https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?
+```
+
+**Key parameters:**
+
+* `table` (e.g. `exoplanets`, `kepler`, `cumulative`)
+* `select`, `where`, `format` (e.g. `json`, `csv`)
+  **How it works:**
+  Construct a GET query with required steps: base URL + `table=…&select=…&where=…&format=json`.
+  ([exoplanetarchive.ipac.caltech.edu][6])
+
+---
+
+### 8. Open Science Data Repository (OSDR)
+
+**What it is:**
+Full-text search, metadata, and file retrieval for NASA’s open science data repository.
+**Primary endpoints:**
+
+* Search: `GET https://api.nasa.gov/osdr/search?query={terms}`
+* Metadata: `GET /osdr/metadata/{accession}`
+* Data File: `GET /osdr/datafile/{accession}`
+  **Key parameters:**
+* `api_key`
+* `query`, accession IDs
+  **How it works:**
+  Search returns JSON lists of datasets; you then fetch metadata or file URLs.
+  ([nasa.gov][7])
+
+---
+
+### 9. Insight: Mars Weather Service
+
+**What it is:**
+Surface weather data (temperature, pressure, wind) from the InSight lander at Elysium Planitia.
+**Endpoint:**
+
+```http
+GET https://api.nasa.gov/insight_weather/?api_key=DEMO_KEY&feedtype=json&ver=1.0
+```
+
+**Key parameters:**
+
+* `api_key`
+* `feedtype=json`, `ver=1.0`
+  **How it works:**
+  Returns a JSON object keyed by recent sols, each containing sensor summaries; typically only the last seven sols.
+  ([api.nasa.gov][8])
+
+---
+
+### 10. Mars Rover Photos
+
+**What it is:**
+Images taken by the Curiosity, Opportunity, Spirit (and now Perseverance) rovers on Mars.
+**Primary endpoint:**
+
+```
+GET https://api.nasa.gov/mars-photos/api/v1/rovers/{rover}/photos
+```
+
+**Key parameters:**
+
+* `api_key`
+* `sol` (Martian day) or `earth_date`
+* `camera` (e.g. `FHAZ`, `NAVCAM`)
+* `page` (25 photos/page)
+  **How it works:**
+  Pass rover name + query params; returns JSON array of photo objects with URLs.
+  ([github.com][9])
+
+---
+
+### 11. NASA Image and Video Library
+
+**What it is:**
+Search NASA’s public image/video archives across all missions.
+**Endpoint:**
+
+```
+GET https://images-api.nasa.gov/search?q={query}
+```
+
+**Key parameters:**
+
+* `q` (search term)
+* `media_type` (`image`/`video`/`audio`)
+* `year_start`/`year_end`
+  **How it works:**
+  Search returns JSON with collections of metadata + preview URLs; objects contain links to actual media.
+  ([images.nasa.gov][10])
+
+---
+
+### 12. TechTransfer: Patents, Software, Tech Reports
+
+**What it is:**
+Metadata on NASA patents, software releases, and technology transfer success stories.
+**Example endpoint:**
+
+```
+GET https://api.nasa.gov/techtransfer/patent
+```
+
+**Key parameters:**
+
+* `api_key`
+* Filters such as `q` (search), `engine` (software/patent), `limit`
+  **How it works:**
+  GET returns JSON with arrays of tech items (title, description, links).
+  ([ntrs.nasa.gov][11])
+
+---
+
+### 13. Satellite Situation Center (SSCWeb)
+
+**What it is:**
+Transforms spacecraft trajectory data into geophysical regions and field-line mappings.
+**Primary endpoint (REST):**
+
+```
+GET https://sscweb.gsfc.nasa.gov/WebServices/REST/sscr/2/
+```
+
+with verbs like `/getTrajectory`, `/getConjunctions` etc.
+**Key parameters:**
+
+* satellite identifier (e.g. “ace”, SPASE URIs)
+* time intervals, step sizes, output formats
+  **How it works:**
+  Submit a REST call with XML/JSON inputs; returns spacecraft positions in requested coordinate systems.
+  ([sscweb.gsfc.nasa.gov][12])
+
+---
+
+### 14. SSD/CNEOS: Solar System Dynamics & NEO Studies
+
+**What it is:**
+JPL’s APIs for fireball data, close-approach tables, ephemerides, orbit solutions, and NEO risk lists.
+**Documentation:**
+Available at JPL’s SSD API index: [https://ssd-api.jpl.nasa.gov/doc/index.php](https://ssd-api.jpl.nasa.gov/doc/index.php)
+**Sample endpoints:**
+
+* `/neo/rest/v1/feed` (NEO feed)
+* `/fireball` (fireball detections)
+* `/horizons` (ephemeris calculations)
+  **How it works:**
+  Each service path accepts its own set of query parameters (dates, object ID, format) and returns JSON or plain text tables.
+  ([ssd-api.jpl.nasa.gov][13])
+
+---
+
+### 15. Techport: Technology Portfolio API
+
+**What it is:**
+Data on active and completed NASA R\&D projects, budgets, roadmaps, and outcomes.
+**Primary endpoints:**
+
+* `/api/projects`
+* `/api/project/{id}.json` (or `.xml`)
+* `/api/specifications`
+  **Key parameters:**
+* none required (public), optional filters via query params
+  **How it works:**
+  GET a listing of project IDs, then fetch detailed JSON for each project record.
+  ([techport.nasa.gov][14], [en.wikipedia.org][15])
+
+---
+
+### 16. TLE API: Two-Line Element Sets
+
+**What it is:**
+Orbital element data for Earth-orbiting objects (satellites, debris).
+**Sample endpoint:**
+
+```
+GET https://api.nasa.gov/tle/LEO?api_key=YOUR_KEY
+```
+
+or by satellite name/ID.
+**Key parameters:**
+
+* `api_key`
+* object identifier (name or NORAD ID)
+  **How it works:**
+  Returns the raw two-line element set text or parsed JSON for integration into orbit propagation tools.
+  ([postman.com][16])
+
+---
+
+### 17. Vesta/Moon/Mars Trek WMTS
+
+**What it is:**
+OGC Web Map Tile Service (WMTS) for high-resolution map tiles of Vesta, the Moon, and Mars (via their Trek web portals).
+**Base URL examples:**
+
+```
+https://trek.nasa.gov/tiles/MarsCRTM…/default028mm/{z}/{x}/{y}.png
+```
+
+(similar for Moon/Vesta)
+**Key parameters:**
+
+* `layer`, `tilematrixset`, `TileMatrix`, `TileRow`, `TileCol`
+  **How it works:**
+  Standard WMTS requests return 256×256 px geo-referenced PNG tiles, consumable by any GIS/Web map viewer.
+  ([postman.com][16])
+
+---
+
+**Getting started with any of these** is as simple as:
+
+1. **Register** for a (free) API key at [https://api.nasa.gov](https://api.nasa.gov).
+2. **Read** the linked documentation (above).
+3. **Make** HTTP GET calls with your `api_key` and any required parameters.
+4. **Parse** the JSON (or XML/CSV) response in your application.
+
+Enjoy exploring NASA’s data!
