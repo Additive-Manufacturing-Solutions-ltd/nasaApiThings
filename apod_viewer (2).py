@@ -7,6 +7,39 @@ import io
 import datetime
 import calendar
 
+
+class ToolTip:
+    """Simple tooltip for a tkinter widget."""
+
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tipwindow = None
+
+    def show(self, event=None):
+        if self.tipwindow or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + 20
+        self.tipwindow = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(
+            tw,
+            text=self.text,
+            background="#ffffe0",
+            relief="solid",
+            borderwidth=1,
+            padx=2,
+            pady=2,
+        )
+        label.pack()
+
+    def hide(self, event=None):
+        if self.tipwindow:
+            self.tipwindow.destroy()
+            self.tipwindow = None
+
 API_KEY = "DEMO_KEY"  # Replace with your NASA API key from https://api.nasa.gov
 
 class APODViewer(tk.Tk):
@@ -157,6 +190,18 @@ class GalleryFrame(ttk.Frame):
         self.page_label.grid(row=0, column=1, padx=5)
         ttk.Button(control_frame, text="Next", command=lambda: self.change_page(1)).grid(row=0, column=2, padx=5)
 
+        ttk.Label(control_frame, text="Images per page:").grid(row=0, column=3, padx=5)
+        self.page_size_var = tk.IntVar(value=10)
+        size_combo = ttk.Combobox(
+            control_frame,
+            textvariable=self.page_size_var,
+            values=[5, 10, 15, 25, 50],
+            width=5,
+            state="readonly",
+        )
+        size_combo.grid(row=0, column=4, padx=5)
+        size_combo.bind("<<ComboboxSelected>>", self.page_size_changed)
+
         # Scrollable canvas for thumbnails
         canvas = tk.Canvas(self)
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
@@ -174,9 +219,13 @@ class GalleryFrame(ttk.Frame):
         self.page_index = 0
         self.load_page()
 
+    def page_size_changed(self, event=None):
+        self.page_index = 0
+        self.load_page()
+
     def change_page(self, delta):
         new_index = self.page_index + delta
-        max_index = ((self.today - self.base_date).days) // 10
+        max_index = ((self.today - self.base_date).days) // self.page_size_var.get()
         if 0 <= new_index <= max_index:
             self.page_index = new_index
             self.load_page()
@@ -186,8 +235,9 @@ class GalleryFrame(ttk.Frame):
         for widget in self.scrollable.winfo_children():
             widget.destroy()
 
-        start_date = self.base_date + datetime.timedelta(days=self.page_index * 10)
-        end_date = min(start_date + datetime.timedelta(days=9), self.today)
+        page_size = self.page_size_var.get()
+        start_date = self.base_date + datetime.timedelta(days=self.page_index * page_size)
+        end_date = min(start_date + datetime.timedelta(days=page_size - 1), self.today)
         self.page_label.config(text=f"{start_date.isoformat()} → {end_date.isoformat()}")
 
         url = (
@@ -198,9 +248,13 @@ class GalleryFrame(ttk.Frame):
         )
         res = requests.get(url)
         data = res.json()
-        images = [item["url"] for item in data if item.get("media_type") == "image"]
+        images = [
+            (item["url"], item.get("title", ""))
+            for item in data
+            if item.get("media_type") == "image"
+        ]
 
-        for idx, img_url in enumerate(images):
+        for idx, (img_url, title) in enumerate(images):
             try:
                 img_res = requests.get(img_url, timeout=10)
                 img = Image.open(io.BytesIO(img_res.content))
@@ -209,6 +263,9 @@ class GalleryFrame(ttk.Frame):
                 lbl = ttk.Label(self.scrollable, image=photo)
                 lbl.image = photo
                 lbl.grid(row=idx // 4, column=idx % 4, padx=5, pady=5)
+                tip = ToolTip(lbl, title)
+                lbl.bind("<Enter>", tip.show)
+                lbl.bind("<Leave>", tip.hide)
             except Exception as e:
                 print(f"Failed to load {img_url}: {e}")
 
