@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import requests
 import io
 import datetime
+import calendar
 
 API_KEY = "DEMO_KEY"  # Replace with your NASA API key from https://api.nasa.gov
 
@@ -43,14 +44,18 @@ class APODViewer(tk.Tk):
 class DateFrame(ttk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        ttk.Label(self, text="Enter date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(self, text="Select date:").pack(pady=5)
         self.date_var = tk.StringVar(value=datetime.date.today().isoformat())
-        ttk.Entry(self, textvariable=self.date_var).pack(pady=5)
+        self.date_btn = ttk.Button(self, textvariable=self.date_var, command=self.open_calendar)
+        self.date_btn.pack(pady=5)
         ttk.Button(self, text="Fetch", command=self.fetch_apod).pack(pady=5)
         self.image_label = ttk.Label(self)
         self.image_label.pack(pady=10)
         self.caption = ttk.Label(self, wraplength=700)
         self.caption.pack()
+
+    def open_calendar(self):
+        CalendarDialog(self, self.date_var)
 
     def fetch_apod(self):
         date_str = self.date_var.get()
@@ -74,6 +79,73 @@ class DateFrame(ttk.Frame):
         self.image_label.config(image=photo)
         self.image_label.image = photo
         self.caption.config(text=data.get("title", ""))
+
+
+class CalendarDialog(tk.Toplevel):
+    def __init__(self, parent, variable):
+        super().__init__(parent)
+        self.variable = variable
+        self.title("Select Date")
+        self.resizable(False, False)
+        self.grab_set()
+
+        selected = datetime.date.fromisoformat(variable.get())
+        self.year = selected.year
+        self.month = selected.month
+
+        nav = ttk.Frame(self)
+        nav.pack(pady=5)
+        ttk.Button(nav, text="<", command=self.prev_month).pack(side="left")
+        self.header = ttk.Label(nav, text="")
+        self.header.pack(side="left", padx=5)
+        ttk.Button(nav, text=">", command=self.next_month).pack(side="left")
+
+        self.cal_frame = ttk.Frame(self)
+        self.cal_frame.pack(padx=5, pady=5)
+        self.update_calendar()
+
+    def prev_month(self):
+        if self.month == 1:
+            self.month = 12
+            self.year -= 1
+        else:
+            self.month -= 1
+        self.update_calendar()
+
+    def next_month(self):
+        if self.month == 12:
+            self.month = 1
+            self.year += 1
+        else:
+            self.month += 1
+        self.update_calendar()
+
+    def update_calendar(self):
+        for w in self.cal_frame.winfo_children():
+            w.destroy()
+
+        self.header.config(text=f"{calendar.month_name[self.month]} {self.year}")
+        days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+        for i, d in enumerate(days):
+            ttk.Label(self.cal_frame, text=d).grid(row=0, column=i, padx=2, pady=2)
+
+        for r, week in enumerate(calendar.monthcalendar(self.year, self.month), start=1):
+            for c, day in enumerate(week):
+                if day == 0:
+                    ttk.Label(self.cal_frame, text="").grid(row=r, column=c, padx=1, pady=1)
+                else:
+                    btn = ttk.Button(
+                        self.cal_frame,
+                        text=str(day),
+                        width=3,
+                        command=lambda d=day: self.set_date(d),
+                    )
+                    btn.grid(row=r, column=c, padx=1, pady=1)
+
+    def set_date(self, day):
+        date = datetime.date(self.year, self.month, day)
+        self.variable.set(date.isoformat())
+        self.destroy()
 
 class GalleryFrame(ttk.Frame):
     def __init__(self, parent, controller):
