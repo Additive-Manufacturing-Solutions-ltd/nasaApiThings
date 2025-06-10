@@ -49,10 +49,10 @@ class DateFrame(ttk.Frame):
         self.date_btn = ttk.Button(self, textvariable=self.date_var, command=self.open_calendar)
         self.date_btn.pack(pady=5)
         ttk.Button(self, text="Fetch", command=self.fetch_apod).pack(pady=5)
+        self.title_label = ttk.Label(self, wraplength=700, font=(None, 14, "bold"))
+        self.title_label.pack(pady=(10, 0))
         self.image_label = ttk.Label(self)
         self.image_label.pack(pady=10)
-        self.caption = ttk.Label(self, wraplength=700)
-        self.caption.pack()
 
     def open_calendar(self):
         CalendarDialog(self, self.date_var)
@@ -78,7 +78,7 @@ class DateFrame(ttk.Frame):
         photo = ImageTk.PhotoImage(img)
         self.image_label.config(image=photo)
         self.image_label.image = photo
-        self.caption.config(text=data.get("title", ""))
+        self.title_label.config(text=data.get("title", ""))
 
 
 class CalendarDialog(tk.Toplevel):
